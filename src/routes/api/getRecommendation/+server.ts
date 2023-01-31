@@ -16,6 +16,9 @@ export async function POST({ request }) {
 		frequency_penalty: 0.0,
 		presence_penalty: 0.0
 	};
+
+	// throw new Error('unexpected');
+
 	// try {
 	return await fetch(endpoint, {
 		method: 'POST',
