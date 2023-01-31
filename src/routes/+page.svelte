@@ -112,7 +112,8 @@
             Chat GPT times out. In this case error is a JSON object
             that looks like this: {"message":"Error: 500"}
 
-            Vercel serverless function times out.
+            Vercel serverless function times out. In this the error
+            is text that looks like: "An error occurred with your deployment FUNCTION_INVOCATION_TIMEOUT"
             */
 			error = await response.text();
 		}
