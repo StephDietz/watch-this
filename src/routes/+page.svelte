@@ -55,6 +55,7 @@
 		'Zombie'
 	];
 	let loading = false;
+	let error = '';
 	/**
 	 * @type {string}
 	 */
@@ -75,12 +76,16 @@
 		let lines = str.split('\n\n');
 		lines.shift();
 		lines = lines;
+		console.log(lines);
 		return lines.map((line) => {
 			// @ts-ignore
 			const [, title, description] = line.match(/\d\.\s*(.*?):\s*(.*)/);
 			return { title, description };
 		});
 	}
+	// "1. Title: this is the description
+	//
+	//    2. Title 2: Next"
 	async function search() {
 		recommendations = [];
 		loading = true;
@@ -97,8 +102,21 @@
 			}
 		});
 
-		let res = await response.json();
-		recommendations = reformData(res.choices[0].text);
+		if (response.ok) {
+			let res = await response.json();
+			recommendations = reformData(res.choices[0].text);
+		} else {
+			/*
+            Possible errors:
+            
+            Chat GPT times out. In this case error is a JSON object
+            that looks like this: {"message":"Error: 500"}
+
+            Vercel serverless function times out.
+            */
+			error = await response.text();
+		}
+
 		loading = false;
 	}
 </script>
@@ -158,6 +176,11 @@
 	{#if loading}
 		<div class="fontsemibold text-lg text-center mt-8">
 			Please be patient as I think. Good things are coming 😎.
+		</div>
+	{/if}
+	{#if error}
+		<div class="fontsemibold text-lg text-center mt-8">
+			Woops! {error}
 		</div>
 	{/if}
 	{#if recommendations}
