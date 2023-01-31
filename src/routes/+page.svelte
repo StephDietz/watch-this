@@ -101,6 +101,13 @@
 				'content-type': 'application/json'
 			}
 		});
+		console.log(response);
+
+		// streaming pseduo code
+		// for (const chunk of stream) {
+		//     recs = reformData(chunk)
+		//     recommendations = recs[recs.length-1]
+		// }
 
 		if (response.ok) {
 			let res = await response.json();
@@ -126,54 +133,57 @@
 	<div class="text-center font-bold text-2xl md:text-4xl mb-10">
 		Get curated show or movie recommendations with Open AI
 	</div>
-	<div class="mb-8">
-		<div class="mb-4 font-semibold">What kind of cinema are you searching for?</div>
-		<div>
-			<select class="p-2 rounded-md border text-gray-600 w-full text-sm" bind:value={cinemaType}>
-				<option value="tv show"> TV Show </option>
-				<option value="movie"> Movie </option>
-				<option value="tv show or movie"> No Preference </option>
-			</select>
-		</div>
-	</div>
 	<div>
-		<div class="mb-4 font-semibold">
-			Select all categories that you want the show or movie to include.
+		<div class="mb-8">
+			<div class="mb-4 font-semibold">What kind of cinema are you searching for?</div>
+			<div>
+				<select class="p-2 rounded-md border text-gray-600 w-full text-sm" bind:value={cinemaType}>
+					<option value="tv show"> TV Show </option>
+					<option value="movie"> Movie </option>
+					<option value="tv show or movie"> No Preference </option>
+				</select>
+			</div>
 		</div>
-		<div class="flex items-center flex-wrap">
-			{#each categoryTypes as category}
-				<label class="mr-2 mb-2">
-					<input
-						type="checkbox"
-						bind:group={selectedCategories}
-						name="categories"
-						value={category}
-					/>
-					{category}
-				</label>
-			{/each}
+		<div>
+			<div class="mb-4 font-semibold">
+				Select all categories that you want the show or movie to include.
+			</div>
+			<div class="flex items-center flex-wrap">
+				{#each categoryTypes as category}
+					<label class="mr-2 mb-2">
+						<input
+							type="checkbox"
+							bind:group={selectedCategories}
+							name="categories"
+							value={category}
+						/>
+						{category}
+					</label>
+				{/each}
+			</div>
+		</div>
+		<div class="my-8">
+			<div class="mb-4 font-semibold">
+				Write any other specifications here. Be as picky as you'd like.
+			</div>
+			<textarea
+				bind:value={specificDescriptors}
+				class="p-2 rounded-md border text-gray-600 w-full h-20 text-sm"
+				placeholder="Ex. Must have at least 2 seasons and be on Netflix or Hulu."
+			/>
+			<button
+				on:click={search}
+				class="mt-4 w-full h-10 text-white font-bold p-3 rounded bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center"
+			>
+				{#if loading}
+					<LoadingIndicator />
+				{:else}
+					<p>Curate My List</p>
+				{/if}
+			</button>
 		</div>
 	</div>
-	<div class="my-8">
-		<div class="mb-4 font-semibold">
-			Write any other specifications here. Be as picky as you'd like.
-		</div>
-		<textarea
-			bind:value={specificDescriptors}
-			class="p-2 rounded-md border text-gray-600 w-full h-20 text-sm"
-			placeholder="Ex. Must have at least 2 seasons and be on Netflix or Hulu."
-		/>
-		<button
-			on:click={search}
-			class="mt-4 w-full h-10 text-white font-bold p-3 rounded bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center"
-		>
-			{#if loading}
-				<LoadingIndicator />
-			{:else}
-				<p>Curate My List</p>
-			{/if}
-		</button>
-	</div>
+
 	{#if loading}
 		<div class="fontsemibold text-lg text-center mt-8">
 			Please be patient as I think. Good things are coming 😎.

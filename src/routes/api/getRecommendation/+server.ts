@@ -5,8 +5,6 @@ const key = import.meta.env.VITE_OPENAI_API_KEY;
 
 export async function POST({ request }) {
 	const { searched } = await request.json();
-	// const res = await api(searched);
-	// let res;
 	const payload = {
 		model: 'text-davinci-003',
 		prompt: searched,
@@ -17,9 +15,6 @@ export async function POST({ request }) {
 		presence_penalty: 0.0
 	};
 
-	// throw new Error('unexpected');
-
-	// try {
 	return await fetch(endpoint, {
 		method: 'POST',
 		headers: {
@@ -28,30 +23,4 @@ export async function POST({ request }) {
 		},
 		body: JSON.stringify(payload)
 	});
-
-	// res = {
-	// 	status: result.status,
-	// 	body: await result.json()
-	// };
-	// } catch (error) {
-	// 	res = {
-	// 		status: 500,
-	// 		error: 'Error receiving data'
-	// 	};
-	// }
-
-	// if (res.status === 200) {
-	// 	const response = res.body;
-	// 	console.log(response);
-	// 	if (response) {
-	// 		return new Response(JSON.stringify(response));
-	// 	}
-	// 	throw error(404);
-	// } else {
-	// 	throw error(res.status);
-	// }
 }
-
-// async function api(searched) {
-
-// }
