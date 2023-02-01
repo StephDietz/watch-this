@@ -207,7 +207,7 @@
 		</button>
 	</div>
 
-	{#if loading && !recString}
+	{#if loading && !recString && !recommendations}
 		<div class="fontsemibold text-lg text-center mt-8 mb-4">
 			Please be patient as I think. Good things are coming 😎.
 		</div>
