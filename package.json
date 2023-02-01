@@ -32,6 +32,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@sveltejs/adapter-vercel": "^1.0.6",
 		"eventsource-parser": "^0.1.0"
 	}
 }

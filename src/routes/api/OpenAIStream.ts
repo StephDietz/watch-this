@@ -31,7 +31,6 @@ export async function OpenAIStream(payload: OpenAIStreamPayload) {
 
 	const stream = new ReadableStream({
 		async start(controller) {
-			// callback
 			function onParse(event: any) {
 				if (event.type === 'event') {
 					const data = event.data;
@@ -52,7 +51,6 @@ export async function OpenAIStream(payload: OpenAIStreamPayload) {
 						controller.enqueue(queue);
 						counter++;
 					} catch (e) {
-						// maybe parse error
 						controller.error(e);
 					}
 				}
