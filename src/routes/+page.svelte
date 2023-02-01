@@ -83,17 +83,15 @@
 			return { title, description };
 		});
 	}
-	// "1. Title: this is the description
-	//
-	//    2. Title 2: Next"
+
 	async function search() {
 		recommendations = [];
 		loading = true;
-		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations that fit some or all of the following categories: ${selectedCategories}. ${
+		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations that fit all of the following categories: ${selectedCategories}. ${
 			specificDescriptors
 				? `Make sure it fits the following description as well: ${specificDescriptors}.`
 				: ''
-		}. Please include descriptions of each show as well. `;
+		} Please include descriptions of each show as well. `;
 		const response = await fetch('/api/getRecommendation', {
 			method: 'POST',
 			body: JSON.stringify({ searched: fullSearchCriteria }),
