@@ -133,6 +133,7 @@
 					recommendationWords.push(chunkValue);
 					recommendationWords = recommendationWords;
 					recString = recommendationWords.reduce((acc, val) => acc + val, '');
+					console.log(recString);
 				}
 				// if(chunkValue)
 			}
