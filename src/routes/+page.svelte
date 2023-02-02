@@ -56,8 +56,11 @@
 	];
 	let loading = false;
 	let error = '';
-	let recommendationWords = [];
-	let recString = '';
+	/**
+	 * @type {Array<string>}
+	 */
+	let streamChunks = [];
+	let recStream = '';
 	/**
 	 * @type {string}
 	 */
@@ -78,17 +81,9 @@
 		if (str.trim() === '') {
 			return;
 		}
+		// @ts-ignore
 		const [, title, description] = str.match(/\d\.\s*(.*?):\s*(.*)/);
 		return { title, description };
-		// let lines = str.split('\n\n');
-		// lines.shift();
-		// lines = lines;
-		// console.log(lines);
-		// return lines.map((line) => {
-		// 	// @ts-ignore
-		// 	const [, title, description] = line.match(/\d\.\s*(.*?):\s*(.*)/);
-		// 	return { title, description };
-		// });
 	}
 
 	async function search() {
@@ -122,22 +117,20 @@
 				const chunkValue = decoder.decode(value);
 
 				if (chunkValue.trim() === '') {
-					let obj = reformData(recString);
+					let obj = reformData(recStream);
 					if (obj) {
 						recommendations.push(obj);
 						recommendations = recommendations;
 					}
-					recString = '';
-					recommendationWords = [];
+					recStream = '';
+					streamChunks = [];
 				} else {
-					recommendationWords.push(chunkValue);
-					recommendationWords = recommendationWords;
-					recString = recommendationWords.reduce((acc, val) => acc + val, '');
-					console.log(recString);
+					streamChunks.push(chunkValue);
+					streamChunks = streamChunks;
+					recStream = streamChunks.reduce((acc, val) => acc + val, '');
+					console.log(recStream);
 				}
-				// if(chunkValue)
 			}
-			// recommendations = reformData(res.choices[0].text);
 		} else {
 			/*
             Possible errors:
@@ -208,7 +201,7 @@
 		</button>
 	</div>
 
-	{#if loading && !recString && !recommendations}
+	{#if loading && !recStream && !recommendations}
 		<div class="fontsemibold text-lg text-center mt-8 mb-4">
 			Please be patient as I think. Good things are coming 😎.
 		</div>
@@ -231,6 +224,6 @@
 		{/each}
 	{/if}
 	<div>
-		{recString}
+		{recStream}
 	</div>
 </div>
