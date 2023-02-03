@@ -57,6 +57,11 @@
 	let loading = false;
 	let error = '';
 	/**
+	 * @type {Array<string>}
+	 */
+	let streamChunks = [];
+	let recStream = '';
+	/**
 	 * @type {string}
 	 */
 	let cinemaType = 'tv show';
@@ -73,15 +78,12 @@
 	 * @param {string} str
 	 */
 	function reformData(str) {
-		let lines = str.split('\n\n');
-		lines.shift();
-		lines = lines;
-		console.log(lines);
-		return lines.map((line) => {
-			// @ts-ignore
-			const [, title, description] = line.match(/\d\.\s*(.*?):\s*(.*)/);
-			return { title, description };
-		});
+		if (str.trim() === '') {
+			return;
+		}
+		// @ts-ignore
+		const [, title, description] = str.match(/\d\.\s*(.*?):\s*(.*)/);
+		return { title, description };
 	}
 
 	async function search() {
@@ -99,10 +101,35 @@
 				'content-type': 'application/json'
 			}
 		});
-
 		if (response.ok) {
-			let res = await response.json();
-			recommendations = reformData(res.choices[0].text);
+			const data = response.body;
+			if (!data) {
+				return;
+			}
+
+			const reader = data.getReader();
+			const decoder = new TextDecoder();
+			let done = false;
+
+			while (!done) {
+				const { value, done: doneReading } = await reader.read();
+				done = doneReading;
+				const chunkValue = decoder.decode(value);
+
+				if (chunkValue.trim() === '') {
+					let obj = reformData(recStream);
+					if (obj) {
+						recommendations.push(obj);
+						recommendations = recommendations;
+					}
+					recStream = '';
+					streamChunks = [];
+				} else {
+					streamChunks.push(chunkValue);
+					streamChunks = streamChunks;
+					recStream = streamChunks.reduce((acc, val) => acc + val, '');
+				}
+			}
 		} else {
 			/*
             Possible errors:
@@ -113,7 +140,9 @@
             Vercel serverless function times out. In this the error
             is text that looks like: "An error occurred with your deployment FUNCTION_INVOCATION_TIMEOUT"
             */
+			console.log(response);
 			error = await response.text();
+			console.log(error);
 		}
 
 		loading = false;
@@ -172,19 +201,20 @@
 			{/if}
 		</button>
 	</div>
-	{#if loading}
-		<div class="fontsemibold text-lg text-center mt-8">
+
+	{#if loading && !recStream && !recommendations}
+		<div class="fontsemibold text-lg text-center mt-8 mb-4">
 			Please be patient as I think. Good things are coming 😎.
 		</div>
 	{/if}
 	{#if error}
-		<div class="fontsemibold text-lg text-center mt-8">
+		<div class="fontsemibold text-lg text-center mt-8 text-red-500">
 			Woops! {error}
 		</div>
 	{/if}
 	{#if recommendations}
-		{#each recommendations as recommendation}
-			<div class="mb-4">
+		{#each recommendations as recommendation, i (i)}
+			<div class="mb-4 rounded-lg shadow bg-white p-4">
 				<div class="text-2xl font-bold mb-2">
 					{recommendation.title}
 				</div>
@@ -194,4 +224,7 @@
 			</div>
 		{/each}
 	{/if}
+	<div>
+		{recStream}
+	</div>
 </div>
