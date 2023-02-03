@@ -128,7 +128,6 @@
 					streamChunks.push(chunkValue);
 					streamChunks = streamChunks;
 					recStream = streamChunks.reduce((acc, val) => acc + val, '');
-					console.log(recStream);
 				}
 			}
 		} else {
@@ -141,7 +140,9 @@
             Vercel serverless function times out. In this the error
             is text that looks like: "An error occurred with your deployment FUNCTION_INVOCATION_TIMEOUT"
             */
+			console.log(response);
 			error = await response.text();
+			console.log(error);
 		}
 
 		loading = false;
@@ -207,7 +208,7 @@
 		</div>
 	{/if}
 	{#if error}
-		<div class="fontsemibold text-lg text-center mt-8">
+		<div class="fontsemibold text-lg text-center mt-8 text-red-500">
 			Woops! {error}
 		</div>
 	{/if}
