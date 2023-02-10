@@ -92,11 +92,17 @@
 		if (loading) return;
 		recommendations = [];
 		loading = true;
-		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations that fit all of the following categories: ${selectedCategories}. ${
+		let fullSearchCriteria = `Give me an list of 5 ${cinemaType} recommendations ${
+			selectedCategories ? `that fit all of the following categories: ${selectedCategories}` : ''
+		}. ${
 			specificDescriptors
 				? `Make sure it fits the following description as well: ${specificDescriptors}.`
 				: ''
-		} If you do not have 5 that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like. Please include descriptions of each show as well. `;
+		} ${
+			selectedCategories || specificDescriptors
+				? `If you do not have 5 that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like.`
+				: ''
+		} Please include descriptions of each show as well. Please return this response as a numbered list with the ${cinemaType}'s title, followed by a colon, and then the description. `;
 		const response = await fetch('/api/getRecommendation', {
 			method: 'POST',
 			body: JSON.stringify({ searched: fullSearchCriteria }),
