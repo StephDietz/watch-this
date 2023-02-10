@@ -96,7 +96,7 @@
 			specificDescriptors
 				? `Make sure it fits the following description as well: ${specificDescriptors}.`
 				: ''
-		} Please include descriptions of each show as well. `;
+		} If you do not have 5 that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like. Please include descriptions of each show as well. `;
 		const response = await fetch('/api/getRecommendation', {
 			method: 'POST',
 			body: JSON.stringify({ searched: fullSearchCriteria }),
