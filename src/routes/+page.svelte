@@ -1,4 +1,6 @@
 <script>
+	import Footer from '$lib/Footer.svelte';
+	import Header from '$lib/Header.svelte';
 	import LoadingIndicator from '../lib/Loading.svelte';
 	const categoryTypes = [
 		'Action',
@@ -87,6 +89,7 @@
 	}
 
 	async function search() {
+		if (loading) return;
 		recommendations = [];
 		loading = true;
 		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations that fit all of the following categories: ${selectedCategories}. ${
@@ -131,26 +134,15 @@
 				}
 			}
 		} else {
-			/*
-            Possible errors:
-            
-            Chat GPT times out. In this case error is a JSON object
-            that looks like this: {"message":"Error: 500"}
-
-            Vercel serverless function times out. In this the error
-            is text that looks like: "An error occurred with your deployment FUNCTION_INVOCATION_TIMEOUT"
-            */
-			console.log(response);
 			error = await response.text();
-			console.log(error);
 		}
-
 		loading = false;
 	}
 </script>
 
 <div>
-	<div class="text-center font-bold text-2xl md:text-4xl mb-10">
+	<Header />
+	<div class="text-center font-extrabold text-indigo-700 text-3xl md:text-5xl mb-10">
 		Get curated show or movie recommendations with Open AI
 	</div>
 	<div class="mb-8">
@@ -192,7 +184,11 @@
 		/>
 		<button
 			on:click={search}
-			class="mt-4 w-full h-10 text-white font-bold p-3 rounded bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center"
+			class={`${
+				loading
+					? 'bg-indigo-300'
+					: 'bg-indigo-500 hover:bg-gradient-to-r from-indigo-700 via-indigo-500 to-indigo-700 '
+			} mt-4 w-full h-10 text-white font-bold p-3 rounded flex items-center justify-center`}
 		>
 			{#if loading}
 				<LoadingIndicator />
@@ -227,4 +223,5 @@
 	<div>
 		{recStream}
 	</div>
+	<Footer />
 </div>
