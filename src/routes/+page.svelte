@@ -102,7 +102,7 @@
 			selectedCategories || specificDescriptors
 				? `If you do not have 5 that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like.`
 				: ''
-		} Please include descriptions of each show as well. Please return this response as a numbered list with the ${cinemaType}'s title, followed by a colon, and then the description. `;
+		} Please include descriptions of each show as well. Please return this response as a numbered list with the ${cinemaType}'s title, followed by a colon, and then the description. There should be a line of whitespace between each item in the list.`;
 		const response = await fetch('/api/getRecommendation', {
 			method: 'POST',
 			body: JSON.stringify({ searched: fullSearchCriteria }),
