@@ -92,7 +92,7 @@
 		if (loading) return;
 		recommendations = [];
 		loading = true;
-		let fullSearchCriteria = `Give me an list of 5 ${cinemaType} recommendations ${
+		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations ${
 			selectedCategories ? `that fit all of the following categories: ${selectedCategories}` : ''
 		}. ${
 			specificDescriptors
@@ -100,9 +100,9 @@
 				: ''
 		} ${
 			selectedCategories || specificDescriptors
-				? `If you do not have 5 that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like.`
+				? `If you do not have 5 recommendations that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like.`
 				: ''
-		} Please include descriptions of each show as well. Please return this response as a numbered list with the ${cinemaType}'s title, followed by a colon, and then the description. There should be a line of whitespace between each item in the list.`;
+		} Please return this response as a numbered list with the ${cinemaType}'s title, followed by a colon, and then a brief description of the ${cinemaType}. There should be a line of whitespace between each item in the list.`;
 		const response = await fetch('/api/getRecommendation', {
 			method: 'POST',
 			body: JSON.stringify({ searched: fullSearchCriteria }),
@@ -148,7 +148,7 @@
 
 <div>
 	<Header />
-	<div class="text-center font-extrabold text-indigo-700 text-3xl md:text-5xl mb-10">
+	<div class="text-center font-extrabold text-black text-3xl md:text-5xl mb-10">
 		Get curated show or movie recommendations with Open AI
 	</div>
 	<div class="mb-8">
