@@ -58,7 +58,26 @@
 	];
 	let loading = false;
 	let error = '';
-	let recStream = '';
+
+	/**
+	 * @type {string}
+	 */
+	let searchResponse = '';
+
+	// $: recStream = streamChunks.join('');
+	$: {
+		let x = searchResponse?.split('\n');
+
+		// Filter out ""
+
+		// searchResponse?.split('\n').map((str) => {
+		// 	const [, title, description] = str.match(/\d\.\s*(.*?):\s*(.*)/);
+
+		// 	return { title, description };
+		// });
+	}
+
+	let recommendations = [];
 	/**
 	 * @type {string}
 	 */
@@ -71,7 +90,7 @@
 	/**
 	 * @type {Array<{title: string, description: string}>}
 	 */
-	let recommendations = [];
+	// let recommendations = [];
 	/**
 	 * @param {string} str
 	 */
@@ -87,10 +106,6 @@
 	async function search() {
 		if (loading) return;
 
-		/**
-		 * @type {Array<string>}
-		 */
-		let streamChunks = [];
 		recommendations = [];
 		loading = true;
 		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations ${
@@ -121,25 +136,33 @@
 
 				const reader = data.getReader();
 				const decoder = new TextDecoder();
-				let done = false;
 
-				while (!done) {
-					const { value, done: doneReading } = await reader.read();
-					done = doneReading;
+				while (true) {
+					const { value, done } = await reader.read();
 					const chunkValue = decoder.decode(value);
 
-					if (chunkValue.trim() === '') {
-						let obj = reformData(recStream);
-						if (obj) {
-							recommendations.push(obj);
-							recommendations = recommendations;
-						}
-						recStream = '';
-						streamChunks = [];
-					} else {
-						streamChunks.push(chunkValue);
-						streamChunks = streamChunks;
-						recStream = streamChunks.reduce((acc, val) => acc + val, '');
+					// streamChunks.push(chunkValue);
+					// streamChunks = [...streamChunks, chunkValue];
+					searchResponse += chunkValue;
+
+					// console.log({ streamChunks: searchResponse });
+
+					// if (chunkValue.trim() === '') {
+					// 	let obj = reformData(recStream);
+					// 	if (obj) {
+					// 		recommendations.push(obj);
+					// 		recommendations = recommendations;
+					// 	}
+					// 	recStream = '';
+					// 	streamChunks = [];
+					// } else {
+					// 	streamChunks.push(chunkValue);
+					// 	streamChunks = streamChunks;
+					// 	recStream = streamChunks.reduce((acc, val) => acc + val, '');
+					// }
+
+					if (done) {
+						break;
 					}
 				}
 			} catch (err) {
@@ -210,7 +233,7 @@
 		</button>
 	</div>
 
-	{#if loading && !recStream && !recommendations}
+	{#if loading && !searchResponse && !recommendations}
 		<div class="fontsemibold text-lg text-center mt-8 mb-4">
 			Please be patient as I think. Good things are coming 😎.
 		</div>
@@ -233,7 +256,7 @@
 		{/each}
 	{/if}
 	<div>
-		{recStream}
+		{searchResponse}
 	</div>
 	<Footer />
 </div>
