@@ -58,10 +58,6 @@
 	];
 	let loading = false;
 	let error = '';
-	/**
-	 * @type {Array<string>}
-	 */
-	let streamChunks = [];
 	let recStream = '';
 	/**
 	 * @type {string}
@@ -90,6 +86,11 @@
 
 	async function search() {
 		if (loading) return;
+
+		/**
+		 * @type {Array<string>}
+		 */
+		let streamChunks = [];
 		recommendations = [];
 		loading = true;
 		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations ${
@@ -110,34 +111,39 @@
 				'content-type': 'application/json'
 			}
 		});
+
 		if (response.ok) {
-			const data = response.body;
-			if (!data) {
-				return;
-			}
-
-			const reader = data.getReader();
-			const decoder = new TextDecoder();
-			let done = false;
-
-			while (!done) {
-				const { value, done: doneReading } = await reader.read();
-				done = doneReading;
-				const chunkValue = decoder.decode(value);
-
-				if (chunkValue.trim() === '') {
-					let obj = reformData(recStream);
-					if (obj) {
-						recommendations.push(obj);
-						recommendations = recommendations;
-					}
-					recStream = '';
-					streamChunks = [];
-				} else {
-					streamChunks.push(chunkValue);
-					streamChunks = streamChunks;
-					recStream = streamChunks.reduce((acc, val) => acc + val, '');
+			try {
+				const data = response.body;
+				if (!data) {
+					return;
 				}
+
+				const reader = data.getReader();
+				const decoder = new TextDecoder();
+				let done = false;
+
+				while (!done) {
+					const { value, done: doneReading } = await reader.read();
+					done = doneReading;
+					const chunkValue = decoder.decode(value);
+
+					if (chunkValue.trim() === '') {
+						let obj = reformData(recStream);
+						if (obj) {
+							recommendations.push(obj);
+							recommendations = recommendations;
+						}
+						recStream = '';
+						streamChunks = [];
+					} else {
+						streamChunks.push(chunkValue);
+						streamChunks = streamChunks;
+						recStream = streamChunks.reduce((acc, val) => acc + val, '');
+					}
+				}
+			} catch (err) {
+				error = 'Looks like OpenAI timed out :(';
 			}
 		} else {
 			error = await response.text();
