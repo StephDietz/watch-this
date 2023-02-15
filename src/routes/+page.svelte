@@ -73,7 +73,7 @@
 		let x = searchResponse?.split('\n');
 		recommendations = x;
 		recommendations = x.map((d, i) => {
-			if ((x.length - 1 > i || (x.length === 5 && endStream)) && d !== '') {
+			if ((x.length - 1 > i || endStream) && d !== '') {
 				// @ts-ignore
 				const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
 				return { title, description };
