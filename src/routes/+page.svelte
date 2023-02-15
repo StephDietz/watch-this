@@ -58,11 +58,31 @@
 	];
 	let loading = false;
 	let error = '';
+	let endStream = false;
+
 	/**
-	 * @type {Array<string>}
+	 * @type {string}
 	 */
-	let streamChunks = [];
-	let recStream = '';
+	let searchResponse = '';
+	/**
+	 * @type {Array<string | {title: string, description: string}>}
+	 */
+	let recommendations = [];
+
+	$: {
+		let x = searchResponse?.split('\n');
+		recommendations = x;
+		recommendations = x.map((d, i) => {
+			if ((x.length - 1 > i || endStream) && d !== '') {
+				// @ts-ignore
+				const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
+				return { title, description };
+			} else {
+				return d;
+			}
+		});
+	}
+
 	/**
 	 * @type {string}
 	 */
@@ -72,26 +92,14 @@
 	 */
 	let selectedCategories = [];
 	let specificDescriptors = '';
-	/**
-	 * @type {Array<{title: string, description: string}>}
-	 */
-	let recommendations = [];
-	/**
-	 * @param {string} str
-	 */
-	function reformData(str) {
-		if (str.trim() === '') {
-			return;
-		}
-		// @ts-ignore
-		const [, title, description] = str.match(/\d\.\s*(.*?):\s*(.*)/);
-		return { title, description };
-	}
 
 	async function search() {
 		if (loading) return;
 		recommendations = [];
+		searchResponse = '';
+		endStream = false;
 		loading = true;
+
 		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations ${
 			selectedCategories ? `that fit all of the following categories: ${selectedCategories}` : ''
 		}. ${
@@ -110,34 +118,30 @@
 				'content-type': 'application/json'
 			}
 		});
+
 		if (response.ok) {
-			const data = response.body;
-			if (!data) {
-				return;
-			}
-
-			const reader = data.getReader();
-			const decoder = new TextDecoder();
-			let done = false;
-
-			while (!done) {
-				const { value, done: doneReading } = await reader.read();
-				done = doneReading;
-				const chunkValue = decoder.decode(value);
-
-				if (chunkValue.trim() === '') {
-					let obj = reformData(recStream);
-					if (obj) {
-						recommendations.push(obj);
-						recommendations = recommendations;
-					}
-					recStream = '';
-					streamChunks = [];
-				} else {
-					streamChunks.push(chunkValue);
-					streamChunks = streamChunks;
-					recStream = streamChunks.reduce((acc, val) => acc + val, '');
+			try {
+				const data = response.body;
+				if (!data) {
+					return;
 				}
+
+				const reader = data.getReader();
+				const decoder = new TextDecoder();
+
+				while (true) {
+					const { value, done } = await reader.read();
+					const chunkValue = decoder.decode(value);
+
+					searchResponse += chunkValue;
+
+					if (done) {
+						endStream = true;
+						break;
+					}
+				}
+			} catch (err) {
+				error = 'Looks like OpenAI timed out :(';
 			}
 		} else {
 			error = await response.text();
@@ -204,7 +208,7 @@
 		</button>
 	</div>
 
-	{#if loading && !recStream && !recommendations}
+	{#if loading && !searchResponse && !recommendations}
 		<div class="fontsemibold text-lg text-center mt-8 mb-4">
 			Please be patient as I think. Good things are coming 😎.
 		</div>
@@ -216,18 +220,23 @@
 	{/if}
 	{#if recommendations}
 		{#each recommendations as recommendation, i (i)}
-			<div class="mb-4 rounded-lg shadow bg-white p-4">
-				<div class="text-2xl font-bold mb-2">
-					{recommendation.title}
+			{#if recommendation !== ''}
+				<div class="mb-4 rounded-lg shadow bg-white p-4">
+					{#if recommendation.title}
+						<div class="text-2xl font-bold mb-2">
+							{recommendation.title}
+						</div>
+						<div class="">
+							{recommendation.description}
+						</div>
+					{:else}
+						<div>
+							{recommendation}
+						</div>
+					{/if}
 				</div>
-				<div class="">
-					{recommendation.description}
-				</div>
-			</div>
+			{/if}
 		{/each}
 	{/if}
-	<div>
-		{recStream}
-	</div>
 	<Footer />
 </div>
