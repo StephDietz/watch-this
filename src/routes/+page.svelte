@@ -58,26 +58,31 @@
 	];
 	let loading = false;
 	let error = '';
+	let endStream = false;
 
 	/**
 	 * @type {string}
 	 */
 	let searchResponse = '';
+	/**
+	 * @type {Array<string | {title: string, description: string}>}
+	 */
+	let recommendations = [];
 
-	// $: recStream = streamChunks.join('');
 	$: {
 		let x = searchResponse?.split('\n');
-
-		// Filter out ""
-
-		// searchResponse?.split('\n').map((str) => {
-		// 	const [, title, description] = str.match(/\d\.\s*(.*?):\s*(.*)/);
-
-		// 	return { title, description };
-		// });
+		recommendations = x;
+		recommendations = x.map((d, i) => {
+			if ((x.length - 1 > i || (x.length === 5 && endStream)) && d !== '') {
+				// @ts-ignore
+				const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
+				return { title, description };
+			} else {
+				return d;
+			}
+		});
 	}
 
-	let recommendations = [];
 	/**
 	 * @type {string}
 	 */
@@ -87,27 +92,14 @@
 	 */
 	let selectedCategories = [];
 	let specificDescriptors = '';
-	/**
-	 * @type {Array<{title: string, description: string}>}
-	 */
-	// let recommendations = [];
-	/**
-	 * @param {string} str
-	 */
-	function reformData(str) {
-		if (str.trim() === '') {
-			return;
-		}
-		// @ts-ignore
-		const [, title, description] = str.match(/\d\.\s*(.*?):\s*(.*)/);
-		return { title, description };
-	}
 
 	async function search() {
 		if (loading) return;
-
 		recommendations = [];
+		searchResponse = '';
+		endStream = false;
 		loading = true;
+
 		let fullSearchCriteria = `Give me a list of 5 ${cinemaType} recommendations ${
 			selectedCategories ? `that fit all of the following categories: ${selectedCategories}` : ''
 		}. ${
@@ -141,27 +133,10 @@
 					const { value, done } = await reader.read();
 					const chunkValue = decoder.decode(value);
 
-					// streamChunks.push(chunkValue);
-					// streamChunks = [...streamChunks, chunkValue];
 					searchResponse += chunkValue;
 
-					// console.log({ streamChunks: searchResponse });
-
-					// if (chunkValue.trim() === '') {
-					// 	let obj = reformData(recStream);
-					// 	if (obj) {
-					// 		recommendations.push(obj);
-					// 		recommendations = recommendations;
-					// 	}
-					// 	recStream = '';
-					// 	streamChunks = [];
-					// } else {
-					// 	streamChunks.push(chunkValue);
-					// 	streamChunks = streamChunks;
-					// 	recStream = streamChunks.reduce((acc, val) => acc + val, '');
-					// }
-
 					if (done) {
+						endStream = true;
 						break;
 					}
 				}
@@ -245,18 +220,23 @@
 	{/if}
 	{#if recommendations}
 		{#each recommendations as recommendation, i (i)}
-			<div class="mb-4 rounded-lg shadow bg-white p-4">
-				<div class="text-2xl font-bold mb-2">
-					{recommendation.title}
+			{#if recommendation !== ''}
+				<div class="mb-4 rounded-lg shadow bg-white p-4">
+					{#if recommendation.title}
+						<div class="text-2xl font-bold mb-2">
+							{recommendation.title}
+						</div>
+						<div class="">
+							{recommendation.description}
+						</div>
+					{:else}
+						<div>
+							{recommendation}
+						</div>
+					{/if}
 				</div>
-				<div class="">
-					{recommendation.description}
-				</div>
-			</div>
+			{/if}
 		{/each}
 	{/if}
-	<div>
-		{searchResponse}
-	</div>
 	<Footer />
 </div>
