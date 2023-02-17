@@ -189,7 +189,7 @@
 		</div>
 		<textarea
 			bind:value={specificDescriptors}
-			class="p-2 rounded-md border text-gray-600 w-full h-20 text-sm"
+			class="p-2 rounded-md border text-gray-600 w-full min-h-[80px] text-sm"
 			placeholder="Ex. Must have at least 2 seasons and be on Netflix or Hulu."
 		/>
 		<button
