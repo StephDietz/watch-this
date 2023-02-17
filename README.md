@@ -6,6 +6,10 @@ This project uses the OpenAI GPT-3 API (specifically, text-davinci-003) and Verc
 
 After cloning the repo, go to OpenAI to make an account and put your API key in a file called `.env`.
 
+For example:
+
+`VITE_OPENAI_API_KEY=...`
+
 Then, run the application in the command line and it will be available at http://localhost:5173.
 
 `npm run dev`
