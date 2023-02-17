@@ -222,7 +222,7 @@
 		{#each recommendations as recommendation, i (i)}
 			{#if recommendation !== ''}
 				<div class="mb-4 rounded-lg shadow bg-white p-4">
-					{#if recommendation.title}
+					{#if typeof recommendation !== 'string' && recommendation.title}
 						<div class="text-2xl font-bold mb-2">
 							{recommendation.title}
 						</div>
