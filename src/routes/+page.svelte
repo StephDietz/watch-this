@@ -2,6 +2,8 @@
 	import Footer from '$lib/Footer.svelte';
 	import Header from '$lib/Header.svelte';
 	import LoadingIndicator from '../lib/Loading.svelte';
+	import RecommendationCard from '$lib/RecommendationCard.svelte';
+
 	const categoryTypes = [
 		'Action',
 		'Adventure',
@@ -76,6 +78,17 @@
 			if ((x.length - 1 > i || endStream) && d !== '') {
 				// @ts-ignore
 				const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
+				// if (title) {
+				// 	const apiKey = '934c6e9a';
+				// 	const url = `http://www.omdbapi.com/?apikey=${apiKey}&t=${title}`;
+				// 	fetch(url)
+				// 		.then((response) => response.json())
+				// 		.then((data) => {
+				// 			console.log(data);
+				// 			return { title, description };
+				// 		})
+				// 		.catch((error) => console.error(error));
+				// }
 				return { title, description };
 			} else {
 				return d;
@@ -223,12 +236,13 @@
 			{#if recommendation !== ''}
 				<div class="mb-4 rounded-lg shadow bg-white p-4">
 					{#if typeof recommendation !== 'string' && recommendation.title}
-						<div class="text-2xl font-bold mb-2">
+						<RecommendationCard {recommendation} />
+						<!-- <div class="text-2xl font-bold mb-2">
 							{recommendation.title}
 						</div>
 						<div class="">
 							{recommendation.description}
-						</div>
+						</div> -->
 					{:else}
 						<div>
 							{recommendation}
