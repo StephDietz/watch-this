@@ -6,6 +6,6 @@
 	inject({ mode: dev ? 'development' : 'production' });
 </script>
 
-<div class="max-w-4xl mx-auto w-full px-6">
+<div class="min-h-screen w-full">
 	<slot />
 </div>

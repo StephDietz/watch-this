@@ -1,66 +1,17 @@
 <script>
+	import * as animateScroll from 'svelte-scrollto';
+	import { fade } from 'svelte/transition';
+	import Form from '$lib/Form.svelte';
+	import Home from '$lib/Home.svelte';
 	import Footer from '$lib/Footer.svelte';
 	import Header from '$lib/Header.svelte';
-	import LoadingIndicator from '../lib/Loading.svelte';
 	import RecommendationCard from '$lib/RecommendationCard.svelte';
-
-	const categoryTypes = [
-		'Action',
-		'Adventure',
-		'Animation',
-		'Biography',
-		'Comedy',
-		'Crime',
-		'Documentary',
-		'Drama',
-		'Family',
-		'Fantasy',
-		'Film-Noir',
-		'History',
-		'Horror',
-		'Musical',
-		'Mystery',
-		'Romance',
-		'Sci-Fi',
-		'Sport',
-		'Thriller',
-		'War',
-		'Western',
-		'Art-house',
-		'Black-Comedy',
-		'Chick-flick',
-		'Cult-classic',
-		'Dark-Comedy',
-		'Epic',
-		'Erotic',
-		'Experimental',
-		'Fairy-tale',
-		'Film-within-a-film',
-		'Futuristic',
-		'Gangster',
-		'Heist',
-		'Historical',
-		'Holiday',
-		'Indie',
-		'Juvenile',
-		'Melodrama',
-		'Monster',
-		'Political',
-		'Psychological',
-		'Road-movie',
-		'Satire',
-		'Science-Fiction',
-		'Slapstick',
-		'Social-issue',
-		'Superhero',
-		'Surreal',
-		'Teen',
-		'Vampire',
-		'Zombie'
-	];
+	import { onMount } from 'svelte';
+	import LoadingCard from '$lib/LoadingCard.svelte';
 	let loading = false;
 	let error = '';
 	let endStream = false;
+	let makeRecommendation = false;
 
 	/**
 	 * @type {string}
@@ -71,29 +22,27 @@
 	 */
 	let recommendations = [];
 
+	/**
+	 * @param {string} target
+	 */
+
 	$: {
-		let x = searchResponse?.split('\n');
-		recommendations = x;
-		recommendations = x.map((d, i) => {
-			if ((x.length - 1 > i || endStream) && d !== '') {
-				// @ts-ignore
-				const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
-				// if (title) {
-				// 	const apiKey = '934c6e9a';
-				// 	const url = `http://www.omdbapi.com/?apikey=${apiKey}&t=${title}`;
-				// 	fetch(url)
-				// 		.then((response) => response.json())
-				// 		.then((data) => {
-				// 			console.log(data);
-				// 			return { title, description };
-				// 		})
-				// 		.catch((error) => console.error(error));
-				// }
-				return { title, description };
-			} else {
-				return d;
+		if (searchResponse) {
+			let lastLength = recommendations.length;
+			let x = searchResponse?.split('\n');
+			recommendations = x.map((d, i) => {
+				if ((x.length - 1 > i || endStream) && d !== '') {
+					// @ts-ignore
+					const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
+					return { title, description };
+				} else {
+					return d;
+				}
+			});
+			if (recommendations.length > lastLength) {
+				animateScroll.scrollToBottom({ offset: 200, duration: 1500 });
 			}
-		});
+		}
 	}
 
 	/**
@@ -161,96 +110,93 @@
 		}
 		loading = false;
 	}
+	function clearForm() {
+		recommendations = [];
+		searchResponse = '';
+		endStream = false;
+		cinemaType = 'tv show';
+		selectedCategories = [];
+		specificDescriptors = '';
+	}
 </script>
 
 <div>
-	<Header />
-	<div class="text-center font-extrabold text-black text-3xl md:text-5xl mb-10">
-		Get curated show or movie recommendations with Open AI
-	</div>
-	<div class="mb-8">
-		<div class="mb-4 font-semibold">What kind of cinema are you searching for?</div>
-		<div>
-			<select class="p-2 rounded-md border text-gray-600 w-full text-sm" bind:value={cinemaType}>
-				<option value="tv show"> TV Show </option>
-				<option value="movie"> Movie </option>
-				<option value="tv show or movie"> No Preference </option>
-			</select>
-		</div>
-	</div>
-	<div>
-		<div class="mb-4 font-semibold">
-			Select all categories that you want the show or movie to include.
-		</div>
-		<div class="flex items-center flex-wrap">
-			{#each categoryTypes as category}
-				<label class="mr-2 mb-2">
-					<input
-						type="checkbox"
-						bind:group={selectedCategories}
-						name="categories"
-						value={category}
-					/>
-					{category}
-				</label>
-			{/each}
-		</div>
-	</div>
-	<div class="my-8">
-		<div class="mb-4 font-semibold">
-			Write any other specifications here. Be as picky as you'd like.
-		</div>
-		<textarea
-			bind:value={specificDescriptors}
-			class="p-2 rounded-md border text-gray-600 w-full h-20 text-sm"
-			placeholder="Ex. Must have at least 2 seasons and be on Netflix or Hulu."
-		/>
-		<button
-			on:click={search}
+	<div class="h-screen w-full bg-cover fixed" style="background-image: url(/background.png)">
+		<div
 			class={`${
-				loading
-					? 'bg-indigo-300'
-					: 'bg-indigo-500 hover:bg-gradient-to-r from-indigo-700 via-indigo-500 to-indigo-700 '
-			} mt-4 w-full h-10 text-white font-bold p-3 rounded flex items-center justify-center`}
-		>
-			{#if loading}
-				<LoadingIndicator />
-			{:else}
-				<p>Curate My List</p>
-			{/if}
-		</button>
+				makeRecommendation ? 'backdrop-blur-md' : ''
+			}  flex flex-col items-center justify-center min-h-screen w-full h-full bg-gradient-to-br from-slate-900/80 to-black/90`}
+		/>
 	</div>
 
-	{#if loading && !searchResponse && !recommendations}
-		<div class="fontsemibold text-lg text-center mt-8 mb-4">
-			Please be patient as I think. Good things are coming 😎.
-		</div>
-	{/if}
-	{#if error}
-		<div class="fontsemibold text-lg text-center mt-8 text-red-500">
-			Woops! {error}
-		</div>
-	{/if}
-	{#if recommendations}
-		{#each recommendations as recommendation, i (i)}
-			{#if recommendation !== ''}
-				<div class="mb-4 rounded-lg shadow bg-white p-4">
-					{#if typeof recommendation !== 'string' && recommendation.title}
-						<RecommendationCard {recommendation} />
-						<!-- <div class="text-2xl font-bold mb-2">
-							{recommendation.title}
-						</div>
-						<div class="">
-							{recommendation.description}
-						</div> -->
-					{:else}
-						<div>
-							{recommendation}
-						</div>
+	<div class="absolute inset-0 px-6 flex flex-col h-screen overflor-auto">
+		<Header
+			on:click={() => {
+				makeRecommendation = false;
+			}}
+		/>
+
+		{#if !makeRecommendation}
+			<div
+				in:fade
+				class="flex-grow max-w-4xl mx-auto w-full md:pt-20  flex flex-col items-center justify-center"
+			>
+				<Home
+					on:click={() => {
+						makeRecommendation = true;
+					}}
+				/>
+			</div>
+		{:else}
+			<div in:fade class="w-full max-w-4xl mx-auto">
+				<div class="w-full mb-8">
+					<Form
+						bind:cinemaType
+						bind:selectedCategories
+						bind:loading
+						bind:specificDescriptors
+						on:click={search}
+					/>
+					{#if recommendations.length > 0 && endStream}
+						<button
+							on:click={clearForm}
+							class="bg-white/20 hover:bg-white/30 mt-4 w-full h-10 text-white font-bold p-3 rounded-full flex items-center justify-center"
+						>
+							Clear Search
+						</button>
 					{/if}
 				</div>
-			{/if}
-		{/each}
-	{/if}
-	<Footer />
+				<div class="md:pb-20 max-w-4xl mx-auto w-full">
+					{#if loading && !searchResponse && !recommendations}
+						<div class="fontsemibold text-lg text-center mt-8 mb-4">
+							Please be patient as I think. Good things are coming 😎.
+						</div>
+					{/if}
+					{#if error}
+						<div class="fontsemibold text-lg text-center mt-8 text-red-500">
+							Woops! {error}
+						</div>
+					{/if}
+					{#if recommendations}
+						{#each recommendations as recommendation, i (i)}
+							<div>
+								{#if recommendation !== ''}
+									<div class="mb-8">
+										{#if typeof recommendation !== 'string' && recommendation.title}
+											<RecommendationCard {recommendation} />
+										{:else}
+											<div>
+												<LoadingCard incomingStream={recommendation} />
+											</div>
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					{/if}
+				</div>
+			</div>
+		{/if}
+		<Footer />
+	</div>
 </div>
