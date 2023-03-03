@@ -185,7 +185,7 @@
 										{#if typeof recommendation !== 'string' && recommendation.title}
 											<RecommendationCard {recommendation} />
 										{:else}
-											<div>
+											<div in:fade>
 												<LoadingCard incomingStream={recommendation} />
 											</div>
 										{/if}
