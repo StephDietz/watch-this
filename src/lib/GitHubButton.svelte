@@ -1,6 +1,6 @@
 <div>
 	<a
-		class="my-1 flex flex-none items-center py-1 px-4 border rounded-full text-sm bg-white shadow-sm hover:bg-black hover:text-white"
+		class="my-1 flex flex-none items-center py-1 px-4 border border-white/50 rounded-full text-sm bg-white/20 hover:bg-white/50 shadow-sm hover:text-slate-900 text-white"
 		href="https://github.com/StephDietz/watch-this"
 		aria-label="Star StephDietz/watch-this on GitHub"
 	>
