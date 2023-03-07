@@ -1,7 +1,7 @@
 {
 	"redirects": [
 		{
-			"source": "https://watchthis.dev/deploy",
+			"source": "https://www.watchthis.dev/deploy",
 			"destination": "https://vercel.com/templates/svelte/watch-this"
 		}
 	]
