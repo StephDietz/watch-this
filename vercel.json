@@ -1,0 +1,12 @@
+{
+	"redirects": [
+		{
+			"source": "/deploy",
+			"destination": "https://vercel.com/templates/svelte/watch-this"
+		},
+		{
+			"source": "/github",
+			"destination": "https://github.com/StephDietz/watch-this"
+		}
+	]
+}
