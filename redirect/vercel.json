@@ -3,10 +3,6 @@
 		{
 			"source": "/deploy",
 			"destination": "https://vercel.com/templates/svelte/watch-this"
-		},
-		{
-			"source": "/",
-			"destination": "https://watchthis.dev"
 		}
 	]
 }
