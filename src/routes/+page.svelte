@@ -40,7 +40,7 @@
 				}
 			});
 			if (recommendations.length > lastLength) {
-				animateScroll.scrollToBottom({ offset: 200, duration: 1500 });
+				animateScroll.scrollToBottom({ duration: 1500 });
 			}
 		}
 	}
