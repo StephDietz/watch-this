@@ -8,7 +8,7 @@ After cloning the repo, go to OpenAI to make an account and put your API key in 
 
 For example:
 
-`VITE_OPENAI_API_KEY=...`
+`OPENAI_API_KEY=...`
 
 Then, run the application in the command line and it will be available at http://localhost:5173.
 
