@@ -16,4 +16,4 @@ Then, run the application in the command line and it will be available at http:/
 
 # Deploy Instantly on Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FStephDietz%2Fwatch-this&env=VITE_OPENAI_API_KEY&envDescription=Open%20AI%20API%20key&demo-title=watchthis.dev&demo-url=https%3A%2F%2Fwatchthis.dev)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FStephDietz%2Fwatch-this&env=OPENAI_API_KEY,OMDB_API_KEY&envDescription=Go%20to%20Open%20AI.%20Sign%20up.%20Get%20your%20API%20key.%20%20Enter%20the%20API%20key%20in%20ENV%20Variables%20and%20LFG!!!%20%20%20After%20that%20head%20to%20https%3A%2F%2Fwww.omdbapi.com%2F%20sign%20up%20and%20follow%20the%20instructions%20to%20get%20your%20API%20key.%20Enter%20it%20and%20LFG!!!&envLink=https%3A%2F%2Fplatform.openai.com%2Faccount%2Fapi-keys)
