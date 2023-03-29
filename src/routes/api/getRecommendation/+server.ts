@@ -1,3 +1,7 @@
+export const config = {
+	runtime: 'edge'
+};
+
 import { createParser } from 'eventsource-parser';
 import { OPENAI_API_KEY } from '$env/static/private';
 

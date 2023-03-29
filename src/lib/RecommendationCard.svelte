@@ -15,7 +15,6 @@
 			}
 		});
 		let recommendationDetails = await response.json();
-
 		return recommendationDetails;
 	}
 
@@ -131,7 +130,8 @@
 			<div
 				class="text-white/50 flex items-center justify-center h-[250px] flex-none w-1/5 bg-neutral-900"
 			>
-				<svg
+				<PopcornIcon />
+				<!-- <svg
 					width="35"
 					height="35"
 					viewBox="0 0 24 24"
@@ -170,7 +170,7 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					/>
-				</svg>
+				</svg> -->
 			</div>
 			<div class="md:hidden z-10 absolute inset-0 bg-cover bg-center">
 				<div class="w-full h-full bg-black/80 bg-blur-sm" />
