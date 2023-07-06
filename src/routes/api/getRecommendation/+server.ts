@@ -3,6 +3,26 @@ import { OPENAI_API_KEY } from '$env/static/private';
 
 const key = OPENAI_API_KEY;
 
+// Object to store the number of requests made by each user
+const requestCounts = {};
+
+// Middleware function to enforce rate limits
+function rateLimitMiddleware(request: Request) {
+	const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
+	console.log(userIP);
+	const userRequests = requestCounts[userIP] || 0;
+
+	// Check if the user has exceeded the rate limit (5 requests per day)
+	if (userRequests >= 5) {
+		return new Response('Rate limit exceeded', { status: 429 });
+	}
+
+	// Increment the request count for the user
+	requestCounts[userIP] = userRequests + 1;
+
+	return null;
+}
+
 interface OpenAIStreamPayload {
 	model: string;
 	prompt: string;
@@ -70,6 +90,11 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 }
 
 export async function POST({ request }: { request: any }) {
+	// Apply rate limit middleware
+	const rateLimitResult = rateLimitMiddleware(request);
+	if (rateLimitResult) {
+		return rateLimitResult;
+	}
 	const { searched } = await request.json();
 	const payload = {
 		model: 'text-davinci-003',
