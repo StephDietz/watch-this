@@ -3,22 +3,46 @@ import { OPENAI_API_KEY } from '$env/static/private';
 
 const key = OPENAI_API_KEY;
 
+// Object to store the number of requests made by each user and their last request timestamp
+interface UserRequestData {
+	count: number;
+	lastRequestTime: number;
+}
+
 // Object to store the number of requests made by each user
-const requestCounts = {};
+const requestCounts: Record<string, UserRequestData> = {};
 
 // Middleware function to enforce rate limits
 function rateLimitMiddleware(request: Request) {
 	const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
-	console.log(userIP);
-	const userRequests = requestCounts[userIP] || 0;
+	const userRequests = requestCounts[userIP];
 
-	// Check if the user has exceeded the rate limit (5 requests per day)
-	if (userRequests >= 5) {
-		return new Response('Rate limit exceeded', { status: 429 });
+	// Check if the user has made requests before
+	if (userRequests) {
+		const { count, lastRequestTime } = userRequests;
+		const currentTime = Date.now();
+
+		// Check if 24 hours have elapsed since the last request
+		if (currentTime - lastRequestTime >= 24 * 60 * 60 * 1000) {
+			// Reset the request count and update the last request timestamp
+			userRequests.count = 1;
+			userRequests.lastRequestTime = currentTime;
+		} else {
+			// Check if the user has exceeded the rate limit (5 requests per day)
+			if (count >= 5) {
+				return new Response('Rate limit exceeded, come back tomorrow!', { status: 429 });
+			}
+
+			// Increment the request count for the user
+			userRequests.count++;
+		}
+	} else {
+		// Create a new user entry with initial request count and timestamp
+		requestCounts[userIP] = {
+			count: 1,
+			lastRequestTime: Date.now()
+		};
 	}
-
-	// Increment the request count for the user
-	requestCounts[userIP] = userRequests + 1;
 
 	return null;
 }
