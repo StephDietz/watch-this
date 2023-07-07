@@ -1,32 +1,52 @@
 import { createParser } from 'eventsource-parser';
 import { OPENAI_API_KEY } from '$env/static/private';
+import { kv } from '@vercel/kv';
 
 const key = OPENAI_API_KEY;
 
 // Object to store the number of requests made by each user and their last request timestamp
 interface UserRequestData {
 	count: number;
-	lastRequestTime: number;
+	lastResetTime: number;
 }
 
-// Object to store the number of requests made by each user
-const requestCounts: Record<string, UserRequestData> = {};
+async function getUserRequestData(userIP: string): Promise<UserRequestData | null> {
+	try {
+		const data = await kv.get<UserRequestData>(userIP);
+		return data;
+	} catch (error) {
+		console.error('Error retrieving user request data:', error);
+		throw error;
+	}
+}
+
+async function updateUserRequestData(userIP: string, data: UserRequestData) {
+	try {
+		console.log(userIP);
+		await kv.set(userIP, data);
+	} catch (error) {
+		console.error('Error updating user request data:', error);
+		throw error;
+	}
+}
 
 // Middleware function to enforce rate limits
-function rateLimitMiddleware(request: Request) {
+async function rateLimitMiddleware(request: Request) {
 	const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
-	const userRequests = requestCounts[userIP];
+	const userRequests = await getUserRequestData(userIP);
 
 	// Check if the user has made requests before
 	if (userRequests) {
-		const { count, lastRequestTime } = userRequests;
+		const { count, lastResetTime } = userRequests;
 		const currentTime = Date.now();
 
-		// Check if 24 hours have elapsed since the last request
-		if (currentTime - lastRequestTime >= 24 * 60 * 60 * 1000) {
-			// Reset the request count and update the last request timestamp
+		// Check if it's a new day and reset the count
+		const currentDay = new Date(currentTime).toLocaleDateString();
+		const lastResetDay = new Date(lastResetTime).toLocaleDateString();
+		if (currentDay !== lastResetDay) {
 			userRequests.count = 1;
-			userRequests.lastRequestTime = currentTime;
+			userRequests.lastResetTime = currentTime;
+			await updateUserRequestData(userIP, userRequests);
 		} else {
 			// Check if the user has exceeded the rate limit (5 requests per day)
 			if (count >= 5) {
@@ -35,13 +55,15 @@ function rateLimitMiddleware(request: Request) {
 
 			// Increment the request count for the user
 			userRequests.count++;
+			await updateUserRequestData(userIP, userRequests);
 		}
 	} else {
 		// Create a new user entry with initial request count and timestamp
-		requestCounts[userIP] = {
+		const newUserRequests: UserRequestData = {
 			count: 1,
-			lastRequestTime: Date.now()
+			lastResetTime: Date.now()
 		};
+		await updateUserRequestData(userIP, newUserRequests);
 	}
 
 	return null;
@@ -115,7 +137,7 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 
 export async function POST({ request }: { request: any }) {
 	// Apply rate limit middleware
-	const rateLimitResult = rateLimitMiddleware(request);
+	const rateLimitResult = await rateLimitMiddleware(request);
 	if (rateLimitResult) {
 		return rateLimitResult;
 	}
