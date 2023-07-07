@@ -34,7 +34,7 @@
 	"dependencies": {
 		"@sveltejs/adapter-vercel": "^1.0.6",
 		"@vercel/analytics": "^0.1.8",
-		"@vercel/kv": "^0.1.0-canary.1",
+		"@vercel/kv": "^0.2.2",
 		"eventsource-parser": "^0.1.0",
 		"svelte-scrollto": "^0.2.0"
 	}
