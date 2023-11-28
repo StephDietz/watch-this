@@ -8,10 +8,12 @@
 	import RecommendationCard from '$lib/RecommendationCard.svelte';
 	import { onMount } from 'svelte';
 	import LoadingCard from '$lib/LoadingCard.svelte';
+	import { dataset_dev } from 'svelte/internal';
 	let loading = false;
 	let error = '';
 	let endStream = false;
 	let makeRecommendation = false;
+	let anwswerList = [];
 
 	/**
 	 * @type {string}
@@ -28,21 +30,23 @@
 
 	$: {
 		if (searchResponse) {
-			let lastLength = recommendations.length;
-			let x = searchResponse?.split('\n');
-			recommendations = x.map((d, i) => {
-				if ((x.length - 1 > i || endStream) && d !== '') {
-					// @ts-ignore
-					const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
-					return { title, description };
-				} else {
-					return d;
-				}
-			});
-			if (recommendations.length > lastLength) {
-				animateScroll.scrollToBottom({ duration: 1500 });
-			}
+			searchResponse = searchResponse?.replaceAll('\\n', '\n');
+			// let lastLength = recommendations.length;
+			// let x = searchResponse?.split('\n');
+			// recommendations = x.map((d, i) => {
+			// 	if ((x.length - 1 > i || endStream) && d !== '') {
+			// 		// @ts-ignore
+			// 		const [, title, description] = d.match(/\d\.\s*(.*?):\s*(.*)/);
+			// 		return { title, description };
+			// 	} else {
+			// 		return d;
+			// 	}
+			// });
+			// if (recommendations.length > lastLength) {
+			// 	animateScroll.scrollToBottom({ duration: 1500 });
+			// }
 		}
+		// console.log(searchResponse);
 	}
 
 	/**
@@ -73,6 +77,13 @@
 				? `If you do not have 5 recommendations that fit these criteria perfectly, do your best to suggest other ${cinemaType}'s that I might like.`
 				: ''
 		} Please return this response as a numbered list with the ${cinemaType}'s title, followed by a colon, and then a brief description of the ${cinemaType}. There should be a line of whitespace between each item in the list.`;
+
+		fullSearchCriteria = `Being the adjust product support, support our customers in anything they ask. Here is what they are asking: ${
+			specificDescriptors
+				? `Make sure it fits the following description as well: ${specificDescriptors}.`
+				: ''
+		}. Please return the response in a step by step number list. There should be a line of whitespace between each item in the list.`;
+
 		const response = await fetch('/api/getRecommendation', {
 			method: 'POST',
 			body: JSON.stringify({ searched: fullSearchCriteria }),
@@ -121,82 +132,61 @@
 </script>
 
 <div>
-	<div class="h-screen w-full bg-cover fixed" style="background-image: url(/background.png)">
+	<div class="h-screen w-full bg-cover fixed" style="background-image: url(/background-adjust.png)">
 		<div
-			class={`${
-				makeRecommendation ? 'backdrop-blur-md' : ''
-			}  flex flex-col items-center justify-center min-h-screen w-full h-full bg-gradient-to-br from-slate-900/80 to-black/90`}
+			class={`backdrop-blur-sm flex flex-col items-center justify-center min-h-screen w-full h-full bg-gradient-to-br from-slate-900/80 to-black/90`}
 		/>
 	</div>
 
 	<div class="absolute inset-0 px-6 flex flex-col h-screen overflor-auto">
-		<Header
-			on:click={() => {
-				makeRecommendation = false;
-			}}
-		/>
-
-		{#if !makeRecommendation}
-			<div
-				in:fade
-				class="flex-grow max-w-4xl mx-auto w-full md:pt-20  flex flex-col items-center justify-center"
-			>
-				<Home
-					on:click={() => {
-						makeRecommendation = true;
-					}}
+		<Header />
+		<div in:fade class="w-full max-w-4xl mx-auto">
+			<div class="w-full mb-8">
+				<Form
+					bind:cinemaType
+					bind:selectedCategories
+					bind:loading
+					bind:specificDescriptors
+					on:click={search}
 				/>
+				{#if recommendations.length > 0 && endStream}
+					<button
+						on:click={clearForm}
+						class="bg-white/20 hover:bg-white/30 mt-4 w-full h-10 text-white font-bold p-3 rounded-full flex items-center justify-center"
+					>
+						Clear Search
+					</button>
+				{/if}
 			</div>
-		{:else}
-			<div in:fade class="w-full max-w-4xl mx-auto">
-				<div class="w-full mb-8">
-					<Form
-						bind:cinemaType
-						bind:selectedCategories
-						bind:loading
-						bind:specificDescriptors
-						on:click={search}
-					/>
-					{#if recommendations.length > 0 && endStream}
-						<button
-							on:click={clearForm}
-							class="bg-white/20 hover:bg-white/30 mt-4 w-full h-10 text-white font-bold p-3 rounded-full flex items-center justify-center"
-						>
-							Clear Search
-						</button>
-					{/if}
-				</div>
-				<div class="md:pb-20 max-w-4xl mx-auto w-full">
-					{#if loading && !searchResponse && !recommendations}
-						<div class="fontsemibold text-lg text-center mt-8 mb-4">
-							Please be patient as I think. Good things are coming 😎.
-						</div>
-					{/if}
-					{#if error}
-						<div class="fontsemibold text-lg text-center mt-8 text-red-500">
-							Woops! {error}
-						</div>
-					{/if}
-					{#if recommendations}
-						{#each recommendations as recommendation, i (i)}
-							<div>
-								{#if recommendation !== ''}
-									<div class="mb-8">
-										{#if typeof recommendation !== 'string' && recommendation.title}
-											<RecommendationCard {recommendation} />
-										{:else}
-											<div in:fade>
-												<LoadingCard incomingStream={recommendation} />
-											</div>
-										{/if}
-									</div>
-								{/if}
+			<div class="md:pb-20 max-w-4xl mx-auto w-full">
+				{#if loading && !searchResponse && !recommendations}
+					<div class="fontsemibold text-lg text-center mt-8 mb-4">
+						Please be patient as I think. Good things are coming 😎.
+					</div>
+				{/if}
+				{#if error}
+					<div class="fontsemibold text-lg text-center mt-8 text-red-500">
+						Woops! {error}
+					</div>
+				{/if}
+				{#if searchResponse}
+					<div in:fade>
+						<LoadingCard incomingStream={searchResponse} />
+					</div>
+				{/if}
+				<!-- {#if searchResponse}
+					{#each searchResponse?.split('\\n\\n') as answer, i (i)}
+						<div>
+							<div class="mb-8">
+								<div in:fade>
+									<LoadingCard incomingStream={answer} />
+								</div>
 							</div>
-						{/each}
-					{/if}
-				</div>
+						</div>
+					{/each}
+				{/if} -->
 			</div>
-		{/if}
+		</div>
 		<Footer />
 	</div>
 </div>

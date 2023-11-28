@@ -82,7 +82,7 @@
 
 <div class="pt-6 md:pt-10 text-slate-200">
 	<div>
-		<div class="mb-8">
+		<!-- <div class="mb-8">
 			<div class="mb-4 font-semibold text-lg">What kind of cinema are you searching for?</div>
 			<div class="flex items-center">
 				{#each cinemaTypes as type (type.value)}
@@ -98,8 +98,8 @@
 					</button>
 				{/each}
 			</div>
-		</div>
-		<div>
+		</div> -->
+		<!-- <div>
 			<div class="mb-4 font-semibold text-lg">
 				Select all categories that you want the show or movie to include.
 			</div>
@@ -121,22 +121,20 @@
 					</label>
 				{/each}
 			</div>
-		</div>
+		</div> -->
 		<div class="mt-8">
-			<div class="mb-4 font-semibold text-lg">
-				Write any other specifications here. Be as picky as you'd like.
-			</div>
+			<div class="mb-4 font-semibold text-lg">Ask us anything. Be as picky as you'd like.</div>
 			<textarea
 				bind:value={specificDescriptors}
 				class="bg-white/40 border border-white/0 p-2 rounded-md placeholder:text-slate-800 text-slate-900 w-full h-20 font-medium"
-				placeholder="Ex. Must have at least 2 seasons and be on Netflix or Hulu."
+				placeholder="Ex. How can I reset my API token"
 			/>
 			<button
 				on:click
 				class={`${
 					loading
-						? 'bg-pink-400/50'
-						: 'bg-pink-600 hover:bg-gradient-to-r from-pink-700 via-pink-600 to-pink-700 '
+						? 'bg-sky-400/50'
+						: 'bg-sky-600 hover:bg-gradient-to-r from-pink-700 via-pink-600 to-pink-700 '
 				} mt-4 w-full h-10 text-white font-bold p-3 rounded-full flex items-center justify-center`}
 			>
 				{#if loading}

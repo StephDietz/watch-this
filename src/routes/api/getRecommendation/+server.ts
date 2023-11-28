@@ -15,7 +15,7 @@ interface OpenAIStreamPayload {
 	n: number;
 }
 
-async function OpenAIStream(payload: OpenAIStreamPayload) {
+async function OpenAIStream(payload: any) {
 	const encoder = new TextEncoder();
 	const decoder = new TextDecoder();
 
@@ -30,11 +30,17 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 		body: JSON.stringify(payload)
 	});
 
+	console.log(payload);
+
+	console.log(res);
+
 	const stream = new ReadableStream({
 		async start(controller) {
 			function onParse(event: any) {
 				if (event.type === 'event') {
 					const data = event.data;
+					console.log(data);
+
 					// https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
 					if (data === '[DONE]') {
 						controller.close();
@@ -49,6 +55,8 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 							return;
 						}
 						const queue = encoder.encode(text);
+						console.log(text);
+
 						controller.enqueue(queue);
 						counter++;
 					} catch (e) {
@@ -62,10 +70,13 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 			const parser = createParser(onParse);
 			// https://web.dev/streams/#asynchronous-iteration
 			for await (const chunk of res.body as any) {
+				// console.log('chunk of stream', chunk);
+
 				parser.feed(decoder.decode(chunk));
 			}
 		}
 	});
+
 	return stream;
 }
 
@@ -82,6 +93,21 @@ export async function POST({ request }: { request: any }) {
 		presence_penalty: 0.0,
 		n: 1
 	};
+
+	return await fetch('https://87c1-178-15-138-146.ngrok-free.app/ask', {
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		method: 'POST',
+		body: JSON.stringify({
+			question: searched
+		})
+	});
+
+	// const payload = {
+	// 	question: searched
+	// };
+
 	const stream = await OpenAIStream(payload);
 	return new Response(stream);
 }
