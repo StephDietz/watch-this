@@ -1,6 +1,6 @@
 import { createParser } from 'eventsource-parser';
-import { OPENAI_API_KEY } from '$env/static/private';
-import { kv } from '@vercel/kv';
+import { OPENAI_API_KEY, KV_REST_API_URL, KV_REST_API_TOKEN } from '$env/static/private';
+import { createClient } from '@vercel/kv';
 
 const key = OPENAI_API_KEY;
 
@@ -9,6 +9,11 @@ interface UserRequestData {
 	count: number;
 	lastResetTime: number;
 }
+
+const kv = createClient({
+	url: KV_REST_API_URL,
+	token: KV_REST_API_TOKEN
+});
 
 async function getUserRequestData(userIP: string): Promise<UserRequestData | null> {
 	try {
@@ -22,7 +27,6 @@ async function getUserRequestData(userIP: string): Promise<UserRequestData | nul
 
 async function updateUserRequestData(userIP: string, data: UserRequestData) {
 	try {
-		console.log(userIP);
 		await kv.set(userIP, data);
 	} catch (error) {
 		console.error('Error updating user request data:', error);
@@ -32,7 +36,8 @@ async function updateUserRequestData(userIP: string, data: UserRequestData) {
 
 // Middleware function to enforce rate limits
 async function rateLimitMiddleware(request: Request) {
-	const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
+	// const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
+	const userIP = 'test3';
 	const userRequests = await getUserRequestData(userIP);
 
 	// Check if the user has made requests before
@@ -69,9 +74,14 @@ async function rateLimitMiddleware(request: Request) {
 	return null;
 }
 
+interface ChatGPTMessage {
+	role: 'user';
+	content: string;
+}
+
 interface OpenAIStreamPayload {
 	model: string;
-	prompt: string;
+	messages: ChatGPTMessage[];
 	temperature: number;
 	top_p: number;
 	frequency_penalty: number;
@@ -87,7 +97,7 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 
 	let counter = 0;
 
-	const res = await fetch('https://api.openai.com/v1/completions', {
+	const res = await fetch('https://api.openai.com/v1/chat/completions', {
 		headers: {
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${key}`
@@ -100,27 +110,30 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 		async start(controller) {
 			function onParse(event: any) {
 				if (event.type === 'event') {
-					const data = event.data;
-					// https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
-					if (data === '[DONE]') {
-						controller.close();
-						return;
-					}
 					try {
-						const json = JSON.parse(data);
-						const text = json.choices[0].text;
+						const data = JSON.parse(event.data);
 
-						if (counter < 2 && (text.match(/\n/) || []).length) {
-							// this is a prefix character (i.e., "\n\n"), do nothing
-							return;
+						if (data && data.choices && data.choices[0] && data.choices[0].delta) {
+							const text = data.choices[0].delta.content;
+							console.log('Received text:', text);
+							const encodedText = encoder.encode(text);
+							controller.enqueue(encodedText);
 						}
-						const queue = encoder.encode(text);
-						controller.enqueue(queue);
-						counter++;
 					} catch (e) {
-						controller.error(e);
+						console.error('Error parsing JSON:', e);
+						controller.error(e); // Properly signaling error to the stream
 					}
 				}
+			}
+			if (res.status !== 200) {
+				const data = {
+					status: res.status,
+					statusText: res.statusText,
+					body: await res.text()
+				};
+				console.log(`Error: recieved non-200 status code, ${JSON.stringify(data)}`);
+				controller.close();
+				return;
 			}
 
 			// stream response (SSE) from OpenAI may be fragmented into multiple chunks
@@ -132,19 +145,20 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 			}
 		}
 	});
+	console.log('stream', stream);
 	return stream;
 }
 
 export async function POST({ request }: { request: any }) {
 	// Apply rate limit middleware
-	const rateLimitResult = await rateLimitMiddleware(request);
-	if (rateLimitResult) {
-		return rateLimitResult;
-	}
+	// const rateLimitResult = await rateLimitMiddleware(request);
+	// if (rateLimitResult) {
+	// 	return rateLimitResult;
+	// }
 	const { searched } = await request.json();
 	const payload = {
-		model: 'text-davinci-003',
-		prompt: searched,
+		model: 'gpt-3.5-turbo',
+		messages: [{ role: 'user', content: searched }],
 		temperature: 0.7,
 		max_tokens: 2048,
 		top_p: 1.0,
@@ -154,5 +168,6 @@ export async function POST({ request }: { request: any }) {
 		n: 1
 	};
 	const stream = await OpenAIStream(payload);
+	console.log('stream===', stream);
 	return new Response(stream);
 }
