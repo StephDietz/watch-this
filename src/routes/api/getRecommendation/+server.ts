@@ -1,6 +1,6 @@
 import { createParser } from 'eventsource-parser';
-import { OPENAI_API_KEY } from '$env/static/private';
-import { kv } from '@vercel/kv';
+import { OPENAI_API_KEY, KV_REST_API_URL, KV_REST_API_TOKEN } from '$env/static/private';
+import { createClient } from '@vercel/kv';
 
 const key = OPENAI_API_KEY;
 
@@ -9,6 +9,11 @@ interface UserRequestData {
 	count: number;
 	lastResetTime: number;
 }
+
+const kv = createClient({
+	url: KV_REST_API_URL,
+	token: KV_REST_API_TOKEN
+});
 
 async function getUserRequestData(userIP: string): Promise<UserRequestData | null> {
 	try {
@@ -22,7 +27,6 @@ async function getUserRequestData(userIP: string): Promise<UserRequestData | nul
 
 async function updateUserRequestData(userIP: string, data: UserRequestData) {
 	try {
-		console.log(userIP);
 		await kv.set(userIP, data);
 	} catch (error) {
 		console.error('Error updating user request data:', error);
@@ -32,7 +36,10 @@ async function updateUserRequestData(userIP: string, data: UserRequestData) {
 
 // Middleware function to enforce rate limits
 async function rateLimitMiddleware(request: Request) {
-	const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
+	// const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
+	const userIP =
+		request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
+
 	const userRequests = await getUserRequestData(userIP);
 
 	// Check if the user has made requests before
@@ -69,9 +76,14 @@ async function rateLimitMiddleware(request: Request) {
 	return null;
 }
 
+interface ChatGPTMessage {
+	role: 'user';
+	content: string;
+}
+
 interface OpenAIStreamPayload {
 	model: string;
-	prompt: string;
+	messages: ChatGPTMessage[];
 	temperature: number;
 	top_p: number;
 	frequency_penalty: number;
@@ -85,9 +97,7 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 	const encoder = new TextEncoder();
 	const decoder = new TextDecoder();
 
-	let counter = 0;
-
-	const res = await fetch('https://api.openai.com/v1/completions', {
+	const res = await fetch('https://api.openai.com/v1/chat/completions', {
 		headers: {
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${key}`
@@ -96,31 +106,23 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 		body: JSON.stringify(payload)
 	});
 
-	const stream = new ReadableStream({
+	const readableStream = new ReadableStream({
 		async start(controller) {
-			function onParse(event: any) {
+			const onParse = (event: any) => {
 				if (event.type === 'event') {
 					const data = event.data;
-					// https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
-					if (data === '[DONE]') {
-						controller.close();
-						return;
-					}
-					try {
-						const json = JSON.parse(data);
-						const text = json.choices[0].text;
-
-						if (counter < 2 && (text.match(/\n/) || []).length) {
-							// this is a prefix character (i.e., "\n\n"), do nothing
-							return;
-						}
-						const queue = encoder.encode(text);
-						controller.enqueue(queue);
-						counter++;
-					} catch (e) {
-						controller.error(e);
-					}
+					controller.enqueue(encoder.encode(data));
 				}
+			};
+			if (res.status !== 200) {
+				const data = {
+					status: res.status,
+					statusText: res.statusText,
+					body: await res.text()
+				};
+				console.log(`Error: recieved non-200 status code, ${JSON.stringify(data)}`);
+				controller.close();
+				return;
 			}
 
 			// stream response (SSE) from OpenAI may be fragmented into multiple chunks
@@ -132,7 +134,31 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 			}
 		}
 	});
-	return stream;
+	let counter = 0;
+	const transformStream = new TransformStream({
+		async transform(chunk, controller) {
+			const data = decoder.decode(chunk);
+			// https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
+			if (data === '[DONE]') {
+				controller.terminate();
+				return;
+			}
+			try {
+				const json = JSON.parse(data);
+				const text = json.choices[0].delta?.content || '';
+				if (counter < 2 && (text.match(/\n/) || []).length) {
+					// this is a prefix character (i.e., "\n\n"), do nothing
+					return;
+				}
+				const encodedText = encoder.encode(text);
+				controller.enqueue(encodedText);
+				counter++;
+			} catch (e) {
+				controller.error(e);
+			}
+		}
+	});
+	return readableStream.pipeThrough(transformStream);
 }
 
 export async function POST({ request }: { request: any }) {
@@ -143,8 +169,8 @@ export async function POST({ request }: { request: any }) {
 	}
 	const { searched } = await request.json();
 	const payload = {
-		model: 'text-davinci-003',
-		prompt: searched,
+		model: 'gpt-3.5-turbo',
+		messages: [{ role: 'user', content: searched }],
 		temperature: 0.7,
 		max_tokens: 2048,
 		top_p: 1.0,

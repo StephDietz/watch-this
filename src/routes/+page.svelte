@@ -138,7 +138,7 @@
 
 		{#if !makeRecommendation}
 			<div
-				in:fade
+				in:fade|global
 				class="flex-grow max-w-4xl mx-auto w-full md:pt-20  flex flex-col items-center justify-center"
 			>
 				<Home
@@ -148,7 +148,7 @@
 				/>
 			</div>
 		{:else}
-			<div in:fade class="w-full max-w-4xl mx-auto">
+			<div in:fade|global class="w-full max-w-4xl mx-auto">
 				<div class="w-full mb-8">
 					<Form
 						bind:cinemaType
@@ -185,7 +185,7 @@
 										{#if typeof recommendation !== 'string' && recommendation.title}
 											<RecommendationCard {recommendation} />
 										{:else}
-											<div in:fade>
+											<div in:fade|global>
 												<LoadingCard incomingStream={recommendation} />
 											</div>
 										{/if}

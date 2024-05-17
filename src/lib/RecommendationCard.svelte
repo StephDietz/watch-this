@@ -27,7 +27,7 @@
 		<LoadingCard incomingStream={false} />
 	{:then data}
 		{#if data.Poster}
-			<div in:fade class="relative flex flex-col md:flex-row bg-neutral-800/70 shadow-md p-6">
+			<div in:fade|global class="relative flex flex-col md:flex-row bg-neutral-800/70 shadow-md p-6">
 				<div
 					class="hidden md:block h-[250px] flex-none w-1/5 bg-cover bg-center"
 					style={`background-image: url(${data.Poster})`}
@@ -62,7 +62,7 @@
 				</div>
 			</div>
 		{:else}
-			<div in:fade class="relative flex flex-col md:flex-row bg-neutral-800/70 shadow-md p-6">
+			<div in:fade|global class="relative flex flex-col md:flex-row bg-neutral-800/70 shadow-md p-6">
 				<div
 					class="text-white/50 flex items-center justify-center h-[250px] flex-none w-1/5 bg-neutral-900"
 				>
@@ -127,7 +127,7 @@
 			</div>
 		{/if}
 	{:catch error}
-		<div in:fade class="relative flex flex-col md:flex-row bg-neutral-800/70 shadow-md p-6">
+		<div in:fade|global class="relative flex flex-col md:flex-row bg-neutral-800/70 shadow-md p-6">
 			<div
 				class="text-white/50 flex items-center justify-center h-[250px] flex-none w-1/5 bg-neutral-900"
 			>
