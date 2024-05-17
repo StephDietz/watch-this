@@ -37,7 +37,9 @@ async function updateUserRequestData(userIP: string, data: UserRequestData) {
 // Middleware function to enforce rate limits
 async function rateLimitMiddleware(request: Request) {
 	// const userIP = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip');
-	const userIP = 'test3';
+	const userIP =
+		request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
+
 	const userRequests = await getUserRequestData(userIP);
 
 	// Check if the user has made requests before
@@ -95,8 +97,6 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 	const encoder = new TextEncoder();
 	const decoder = new TextDecoder();
 
-	let counter = 0;
-
 	const res = await fetch('https://api.openai.com/v1/chat/completions', {
 		headers: {
 			'Content-Type': 'application/json',
@@ -106,25 +106,14 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 		body: JSON.stringify(payload)
 	});
 
-	const stream = new ReadableStream({
+	const readableStream = new ReadableStream({
 		async start(controller) {
-			function onParse(event: any) {
+			const onParse = (event: any) => {
 				if (event.type === 'event') {
-					try {
-						const data = JSON.parse(event.data);
-
-						if (data && data.choices && data.choices[0] && data.choices[0].delta) {
-							const text = data.choices[0].delta.content;
-							console.log('Received text:', text);
-							const encodedText = encoder.encode(text);
-							controller.enqueue(encodedText);
-						}
-					} catch (e) {
-						console.error('Error parsing JSON:', e);
-						controller.error(e); // Properly signaling error to the stream
-					}
+					const data = event.data;
+					controller.enqueue(encoder.encode(data));
 				}
-			}
+			};
 			if (res.status !== 200) {
 				const data = {
 					status: res.status,
@@ -145,16 +134,39 @@ async function OpenAIStream(payload: OpenAIStreamPayload) {
 			}
 		}
 	});
-	console.log('stream', stream);
-	return stream;
+	let counter = 0;
+	const transformStream = new TransformStream({
+		async transform(chunk, controller) {
+			const data = decoder.decode(chunk);
+			// https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
+			if (data === '[DONE]') {
+				controller.terminate();
+				return;
+			}
+			try {
+				const json = JSON.parse(data);
+				const text = json.choices[0].delta?.content || '';
+				if (counter < 2 && (text.match(/\n/) || []).length) {
+					// this is a prefix character (i.e., "\n\n"), do nothing
+					return;
+				}
+				const encodedText = encoder.encode(text);
+				controller.enqueue(encodedText);
+				counter++;
+			} catch (e) {
+				controller.error(e);
+			}
+		}
+	});
+	return readableStream.pipeThrough(transformStream);
 }
 
 export async function POST({ request }: { request: any }) {
 	// Apply rate limit middleware
-	// const rateLimitResult = await rateLimitMiddleware(request);
-	// if (rateLimitResult) {
-	// 	return rateLimitResult;
-	// }
+	const rateLimitResult = await rateLimitMiddleware(request);
+	if (rateLimitResult) {
+		return rateLimitResult;
+	}
 	const { searched } = await request.json();
 	const payload = {
 		model: 'gpt-3.5-turbo',
@@ -168,6 +180,5 @@ export async function POST({ request }: { request: any }) {
 		n: 1
 	};
 	const stream = await OpenAIStream(payload);
-	console.log('stream===', stream);
 	return new Response(stream);
 }
